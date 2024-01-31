@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 
 import { Planet } from "../types/Booking.types";
-import axios from "axios";
 import { calculateBookingPrice } from "../utils/calculateBookingPrice";
 import styles from "./BookingForm.module.css";
-
-const API_URL = "https://api.le-systeme-solaire.net/rest/bodies/";
+import { useDestinations } from "../hooks/useDestinations";
 
 const BookingForm: React.FC = () => {
   const [destinations, setDestinations] = useState<Planet[]>([]);
@@ -15,19 +13,17 @@ const BookingForm: React.FC = () => {
   const [passengers, setPassengers] = useState(1);
   const [totalCost, setTotalCost] = useState(0);
 
-  useEffect(() => {
-    fetchDestinations();
-  }, []);
+  // Custom hook for fetching destinations
+  const { fetchDestinations } = useDestinations();
 
-  const fetchDestinations = async () => {
-    try {
-      const response = await axios.get(API_URL);
-      const planets = response.data.bodies.filter((body: any) => body.isPlanet);
+  useEffect(() => {
+    const fetchDestinationsData = async () => {
+      const planets = await fetchDestinations();
       setDestinations(planets);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
+    };
+
+    fetchDestinationsData();
+  }, [fetchDestinations]);
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = destinations.find(
