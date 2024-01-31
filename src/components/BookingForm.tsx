@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import { Planet } from "../types/Booking.types";
 import axios from "axios";
+import { calculateBookingPrice } from "../utils/calculateBookingPrice";
 import styles from "./BookingForm.module.css";
 
 const API_URL = "https://api.le-systeme-solaire.net/rest/bodies/";
@@ -21,33 +22,11 @@ const BookingForm: React.FC = () => {
   const fetchDestinations = async () => {
     try {
       const response = await axios.get(API_URL);
-      // console.log(response);
-
       const planets = response.data.bodies.filter((body: any) => body.isPlanet);
       setDestinations(planets);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  };
-
-  const calculatePrice = () => {
-    if (!selectedDestination) return;
-
-    const distance = selectedDestination.isPlanet
-      ? (selectedDestination.perihelion + selectedDestination.aphelion) / 2
-      : selectedDestination.aroundPlanet
-      ? (selectedDestination.aroundPlanet.rel.perihelion +
-          selectedDestination.aroundPlanet.rel.aphelion) /
-        2
-      : 0;
-
-    const temperature = Math.max(selectedDestination.avgTemp, 50);
-    const moonsCost =
-      (selectedDestination.moons ? selectedDestination.moons.length : 0) *
-      0.072;
-    const baseCost = (distance * temperature * (1 + moonsCost)) / 100000000;
-
-    setTotalCost(baseCost * passengers);
   };
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -59,6 +38,12 @@ const BookingForm: React.FC = () => {
 
   const handlePassengersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassengers(parseInt(e.target.value, 10) || 1);
+  };
+
+  const handleCalculatePrice = () => {
+    if (selectedDestination) {
+      setTotalCost(calculateBookingPrice(selectedDestination, passengers));
+    }
   };
 
   return (
@@ -85,7 +70,10 @@ const BookingForm: React.FC = () => {
           onChange={handlePassengersChange}
         />
       </div>
-      <button className={styles["calculate-button"]} onClick={calculatePrice}>
+      <button
+        className={styles["calculate-button"]}
+        onClick={handleCalculatePrice}
+      >
         Calculate Price
       </button>
       {totalCost > 0 ? (
